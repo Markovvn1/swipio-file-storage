@@ -1,0 +1,110 @@
+variables:
+  CI_REGISTRY_IMAGE_TAG: "ref-$CI_COMMIT_SHA"
+  CI_REGISTRY_IMAGE_WITH_TAG: "$CI_REGISTRY_IMAGE:ref-$CI_COMMIT_SHA"
+
+
+stages:
+  - build_dev
+  - lint_and_test
+  - build_prod
+  - deploy
+
+
+
+.python_stage: &python_stage
+  image: python:3.9
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    paths:
+      - .cache/pip
+      - .venv/
+
+
+
+build_dev:
+  <<: *python_stage
+  stage: build_dev
+  script:
+    - python -V
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - python -m pip install --upgrade pip
+    - python -m pip install poetry
+    - poetry install
+
+
+
+lint:
+  <<: *python_stage
+  stage: lint_and_test
+  script:
+    - source .venv/bin/activate
+    - flake8 --jobs 4 --statistics --show-source tests file_storage
+    - pylint --jobs 4 --rcfile=setup.cfg tests file_storage
+    - mypy tests file_storage
+    - black --skip-string-normalization --check tests file_storage
+
+test:
+  <<: *python_stage
+  stage: lint_and_test
+  script:
+    - source .venv/bin/activate
+    - pytest -v tests
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
+
+
+
+build_prod:
+  image: jdrouet/docker-with-buildx:stable
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+  stage: build_prod
+  services:
+    - docker:dind
+  before_script:
+    - docker version
+    # https://github.com/docker/buildx/issues/314
+    # https://stackoverflow.com/questions/61430005/gitlab-ci-cd-building-multiarch-docker-images
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker buildx create --use
+  script:
+    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - docker buildx ls
+    - docker buildx build --platform linux/arm64,linux/amd64 -t $CI_REGISTRY_IMAGE_WITH_TAG --push .
+
+
+
+.deploy_stage: &deploy_stage
+  image: alpine
+  before_script:
+    - apk add openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - echo "$SSH_HOST_ID" >> ~/.ssh/known_hosts
+    - echo "StrictHostKeyChecking yes" >> ~/.ssh/config
+  script:
+    - scp docker-compose.$ENV_NAME.yml $SSH_TARGET:file_storage/$ENV_NAME/
+    - ssh $SSH_TARGET "cd file_storage/$ENV_NAME && 
+        IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml pull &&
+        IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml up -d --remove-orphans"
+
+deploy_production:
+  <<: *deploy_stage
+  stage: deploy
+  variables:
+    ENV_NAME: production
+    ENV_URL: http://swipio.duckdns.org:5110
+    SSH_HOST_ID: $SSH_PRODUCTION_HOST_ID
+    SSH_PRIVATE_KEY: $SSH_PRODUCTION_PRIVATE_KEY
+    SSH_TARGET: $SSH_PRODUCTION_TARGET
+  environment:
+    name: $ENV_NAME
+    url: $ENV_URL
+  when: manual
+  only:
+    - master
