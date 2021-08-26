@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "file_storage"
+version = "0.1.0"
+description = "File storage for IU Swipio"
+authors = ["Vladimir Markov <markovvn1@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+fastapi = "^0.68.0"
+uvicorn = "^0.15.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+pytest-cov = "^2.12.1"
+autoflake = "^1.4"
+isort = "^5.9.3"
+black = "^21.7b0"
+unify = "^0.5"
+flake8 = "^3.9.2"
+pylint = "^2.10.2"
+mypy = "^0.910"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
