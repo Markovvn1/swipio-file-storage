@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
-from .controller import Controller, ControllerException, FileControllerException
+from .controller import Controller, ControllerException
 
 MAX_UPLOAD_SIZE = 1024 * 1024
 
@@ -29,7 +29,7 @@ def get_current_user_id(credentials: HTTPBasicCredentials = Depends(security)) -
 
 @app.post('/upload')
 def upload_file(
-    user_id: int = Depends(get_current_user_id), file: UploadFile = File(...)
+    _user_id: int = Depends(get_current_user_id), file: UploadFile = File(...)
 ) -> Dict[str, Any]:
     file_chunks = []  # type: List[bytes]
 
@@ -63,7 +63,7 @@ def download_file(file_uid: str) -> FileResponse:
     if file is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'you are not allowed to get this file',
+            detail='you are not allowed to get this file',
         )
 
     return FileResponse(

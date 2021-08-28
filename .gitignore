@@ -1,6 +1,7 @@
 test.db
 file_storage.db*
 storage/
+storage_4del/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

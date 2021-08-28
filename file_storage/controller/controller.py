@@ -1,6 +1,6 @@
 import hashlib
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 from loguru import logger
 
@@ -22,7 +22,7 @@ class Controller:
     def get_user_id(self, login: str, pass_sha256: str) -> Optional[int]:
         return self._model.get_user_id(login, pass_sha256)
 
-    def _file_sha256_to_path(self, file_sha256: str) -> str:
+    def _file_sha256_to_path(self, file_sha256: str) -> Tuple[str, str]:
         file_path = os.path.join(file_sha256[0:2], file_sha256[2:4])
         return file_path, file_sha256
 
@@ -62,7 +62,7 @@ class Controller:
             file_media_type,
         )
 
-    def get_file_by_uid(self, file_uid: str) -> ModelFile:
+    def get_file_by_uid(self, file_uid: str) -> Optional[ModelFile]:
         file = self._model.get_file_by_uid(file_uid)
         if file is None:
             return None
