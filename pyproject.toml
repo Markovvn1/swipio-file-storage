@@ -8,6 +8,10 @@ authors = ["Vladimir Markov <markovvn1@gmail.com>"]
 python = "^3.8"
 fastapi = "^0.68.0"
 uvicorn = "^0.15.0"
+SQLAlchemy = "^1.4.23"
+loguru = "^0.5.3"
+python-multipart = "^0.0.5"
+aiofiles = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
@@ -19,6 +23,7 @@ unify = "^0.5"
 flake8 = "^3.9.2"
 pylint = "^2.10.2"
 mypy = "^0.910"
+sqlalchemy-stubs = "^0.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
