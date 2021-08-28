@@ -53,7 +53,7 @@ def upload_file(
     return {'status': 'ok', 'file_uid': file_uid}
 
 
-@app.post('/download/{file_uid}')
+@app.get('/download/{file_uid}')
 def download_file(file_uid: str) -> FileResponse:
     try:
         file = controller.get_file_by_uid(file_uid)
