@@ -1,3 +1,4 @@
+import os
 import hashlib
 from typing import Any, Dict, List
 
@@ -8,6 +9,9 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from .controller import Controller, ControllerException
 
 MAX_UPLOAD_SIZE = 1024 * 1024
+
+# Create storage folder
+os.makedirs('storage', exist_ok=True)
 
 app = FastAPI()
 controller = Controller('storage', 'sqlite:///storage/file_storage.db')
