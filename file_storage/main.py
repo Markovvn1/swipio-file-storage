@@ -10,7 +10,7 @@ from .controller import Controller, ControllerException
 MAX_UPLOAD_SIZE = 1024 * 1024
 
 app = FastAPI()
-controller = Controller('storage', 'sqlite:///file_storage.db')
+controller = Controller('storage', 'sqlite:///storage/file_storage.db')
 security = HTTPBasic()
 
 

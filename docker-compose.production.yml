@@ -5,3 +5,5 @@ services:
     image: "registry.gitlab.com/swipio/file_storage:${IMAGE_TAG:-latest}"
     ports:
       - 5110:80
+    volumes:
+      - ./storage:/opt/app/storage
