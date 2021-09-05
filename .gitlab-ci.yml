@@ -90,8 +90,8 @@ build_prod:
   script:
     - scp docker-compose.$ENV_NAME.yml $SSH_TARGET:file_storage/$ENV_NAME/
     - ssh $SSH_TARGET "cd file_storage/$ENV_NAME && 
-        COMPOSE_PROJECT_NAME=file_storage IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml pull &&
-        COMPOSE_PROJECT_NAME=file_storage IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml up -d --remove-orphans"
+        COMPOSE_PROJECT_NAME=file_storage_$ENV_NAME IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml pull &&
+        COMPOSE_PROJECT_NAME=file_storage_$ENV_NAME IMAGE_TAG=$CI_REGISTRY_IMAGE_TAG docker-compose -f docker-compose.$ENV_NAME.yml up -d --remove-orphans"
 
 deploy_production:
   <<: *deploy_stage
