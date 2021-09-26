@@ -4,52 +4,31 @@ variables:
 
 
 stages:
-  - build_dev
   - lint_and_test
   - build_prod
+  - docker_tag_latest
   - deploy
 
 
 
-.python_stage: &python_stage
+lint_and_test:
+  stage: lint_and_test
   image: python:3.9
-  variables:
-    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  cache:
-    paths:
-      - .cache/pip
-      - .venv/
-
-
-
-build_dev:
-  <<: *python_stage
-  stage: build_dev
-  script:
+  before_script:
     - python -V
     - python -m venv .venv
     - source .venv/bin/activate
     - python -m pip install --upgrade pip
     - python -m pip install poetry
     - poetry install
-
-
-
-lint:
-  <<: *python_stage
-  stage: lint_and_test
   script:
     - source .venv/bin/activate
+    # lint
     - flake8 --jobs 4 --statistics --show-source tests file_storage
     - pylint --jobs 4 --rcfile=setup.cfg tests file_storage
     - mypy tests file_storage
     - black --skip-string-normalization --check tests file_storage
-
-test:
-  <<: *python_stage
-  stage: lint_and_test
-  script:
-    - source .venv/bin/activate
+    # test
     - pytest -v tests
     - coverage xml
   artifacts:
@@ -61,7 +40,8 @@ test:
 build_prod:
   image: jdrouet/docker-with-buildx:stable
   variables:
-    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: "/certs"
   stage: build_prod
   services:
     - docker:dind
@@ -69,12 +49,26 @@ build_prod:
     - docker version
     # https://github.com/docker/buildx/issues/314
     # https://stackoverflow.com/questions/61430005/gitlab-ci-cd-building-multiarch-docker-images
+    # https://github.com/docker/buildx/issues/413
     - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-    - docker buildx create --use
+    - docker context create tls-environment
+    - docker buildx create --name multiarch-builder --use tls-environment
   script:
-    - docker login -u gitlab-ci-token -p $CI_BUILD_TOKEN $CI_REGISTRY
-    - docker buildx ls
+    - docker login -u $CI_REGISTRY_USER -p $CI_BUILD_TOKEN $CI_REGISTRY
     - docker buildx build --platform linux/arm64,linux/amd64 -t $CI_REGISTRY_IMAGE_WITH_TAG --push .
+
+
+
+docker_tag_latest:
+  stage: docker_tag_latest
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: [""]
+  script:
+    - crane auth login -u $CI_REGISTRY_USER -p $CI_BUILD_TOKEN $CI_REGISTRY
+    - crane tag $CI_REGISTRY_IMAGE_WITH_TAG latest
+  only:
+    - master
 
 
 

@@ -29,6 +29,10 @@ format:
 .PHONY: ci
 ci:	lint test
 
+.PHONY: up_dev
+up_dev:
+	$(VENV)/bin/uvicorn file_storage:app --reload
+
 .PHONY: up
 up:
-	$(VENV)/bin/uvicorn file_storage:app --reload
+	$(VENV)/bin/uvicorn --host 0.0.0.0 --port 5110 file_storage:app
